@@ -1,0 +1,16 @@
+{
+  "name": "arbitrade",
+  "version": "1.0.0",
+  "description": "automated arbitrage trading bot",
+  "main": "main.js",
+  "author": "Izzy Swart",
+  "license": "None",
+  "private": true,
+  "dependencies": {
+    "ccxt": "^1.10.653",
+    "express": "^4.16.2",
+    "node-fetch": "^1.7.3",
+    "socket.io": "^2.0.4",
+    "zombie": "^5.0.7"
+  }
+}
