@@ -4,6 +4,7 @@ const to = require('./to.js');
 const app = require('express')();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
+const { performance } = require('perf_hooks');
 var fetch = require('node-fetch');
 
 io.on('connection', function(socket){
@@ -74,7 +75,7 @@ async function getSymbols (xcs) {
   return symbols;
 }
 
-async function pGetPrices(x, s) {
+/*async function pGetPrices(x, s) {
   var exchanges = x;
   var symbols = s;
   var err;
@@ -84,7 +85,7 @@ async function pGetPrices(x, s) {
       var ipromises = Object.keys(symbol.exchanges).map((exchange) => {
         return new Promise(async function(resolve, reject) {
           if (exchanges.hasOwnProperty(exchange)) {
-            if (Object.keys(exchanges[exchange].tickers).length===0 || !exchanges[exchange].tickers) {
+            if (!exchanges[exchange].tickers || Object.keys(exchanges[exchange].tickers).length===0) {
               var tickers;
               [err, tickers] = await to(exchanges[exchange].fetchTickers());
               exchanges[exchange].tickers = tickers;
@@ -128,8 +129,11 @@ async function pGetPrices(x, s) {
     });
   });
   await Promise.all(promises);
+  for (var i=0; i<exchanges.length; i++) {
+    delete exchanges[i].tickers;
+  }
   return symbols;
-}
+}*/
 
 async function getPrices(x) {
   var exchanges = x;
@@ -227,7 +231,7 @@ async function getPrices(x) {
     'bleutrade', 'hitbtc', 'cryptopia'
   ]));
   [err, symbols] = await to(getSymbols(Object.values(exchanges)));
-  //symbols = await getPrices(exchanges);
+  symbols = await getPrices(exchanges);
   /*var poloniexErrored = []
   for (var i=0; i<symbols.length; i++) {
     if (symbols[i].diffs.length>0) {
@@ -245,10 +249,8 @@ async function getPrices(x) {
     }
   }
   console.log('Poloniex market verification complete')*/
-  /*while (true) {
+  while (true) {
     symbols = await getPrices(exchanges);
     io.emit('symbols',symbols);
-  }*/
-  //console.log(await pGetPrices(exchanges, symbols));
-  await pGetPrices(exchanges, symbols);
+  }
 })();
