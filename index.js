@@ -5,14 +5,28 @@ const app = require('express')();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const { performance } = require('perf_hooks');
+var hTracked = [];
+var trackerSemaphores = {};
 
 io.on('connection', function(socket){
   console.log('Web interface connected');
+  socket.emit('hTracked', hTracked);
+  socket.on('hTrackedP', function(data) {
+    hTracked.push(data);
+    trackerSemaphores[data] = 'start';
+  });
+  socket.on('hTrackedM', function(data) {
+    hTracked.splice(hTracked.indexOf(data),1);
+    trackerSemaphores[data] = 'stop';
+  });
 });
-
 http.listen(3001, 'localhost', function(){
   console.log('Realtime update socket listening on *:3001');
 });
+
+async function log(message) {
+  //console.log(message);
+}
 
 async function connectExchanges(ts) {
   var targets = ts;
@@ -20,7 +34,7 @@ async function connectExchanges(ts) {
   var promises = targets.map((target) => {
     return new Promise(async function(resolve, reject) {
       exchanges[target] = new ccxt[target]();
-      exchanges[target].timeout = 10000;
+      exchanges[target].timeout = 5000;
       exchanges[target].tickers = {};
       return resolve();
     });
@@ -51,7 +65,7 @@ async function getSymbols(xcs) {
         return resolve();
       });
     }).catch((err) => {
-      console.log(`Failed to get market data from ${err.name}`);
+      log(`Failed to get market data from ${err.name}`);
       delete exchanges[err.id];
     })
     return promise;
@@ -80,11 +94,11 @@ async function cullOfflineMarkets(s, e) {
   var exchanges = e;
   symbols.map((symbol) => {
     Object.keys(symbol.exchanges).map((exchange) => {
-      if (exchanges[exchange].markets[symbol.symbol].info.StatusMessage && exchanges[exchange].markets[symbol.symbol].info.StatusMessage.length > 1) {
+      if (exchanges[exchange].markets[symbol.symbol].info && exchanges[exchange].markets[symbol.symbol].info.StatusMessage && exchanges[exchange].markets[symbol.symbol].info.StatusMessage.length > 1) {
         //console.log(exchanges[exchange].markets[symbol.symbol].info.StatusMessage, symbol.symbol, exchange);
         delete symbol.exchanges[exchange];
       }
-      if (exchanges[exchange].markets[symbol.symbol].info.Status && exchanges[exchange].markets[symbol.symbol].info.Status != 'OK') {
+      if (exchanges[exchange].markets[symbol.symbol].info && exchanges[exchange].markets[symbol.symbol].info.Status && exchanges[exchange].markets[symbol.symbol].info.Status != 'OK') {
         //console.log(exchanges[exchange].markets[symbol.symbol].info.Status, symbol.symbol, exchange);
         delete symbol.exchanges[exchange];
       }
@@ -106,7 +120,7 @@ async function getPrices(s, e) {
         a = performance.now();
         [err, exchange.tickers] = await to(exchange.fetchTickers());
         b = performance.now();
-        console.log(`Took ${b-a}ms to get prices from ${exchange.name}`)
+        log(`Took ${b-a}ms to get prices from ${exchange.name}`)
         if (!err) {
           return resolve();
         }
@@ -122,6 +136,9 @@ async function getPrices(s, e) {
         symbol.exchanges[exchange].bid = exchanges[exchange].tickers[symbol.symbol].bid;
         symbol.exchanges[exchange].ask = exchanges[exchange].tickers[symbol.symbol].ask;
         symbol.exchanges[exchange].timestamp = exchanges[exchange].tickers[symbol.symbol].timestamp;
+        if (symbol.exchanges[exchange].bid===0 || symbol.exchanges[exchange].timestamp===0 || symbol.exchanges[exchange].ask===0) {
+          delete symbol.exchanges[exchange];
+        }
       }
     });
   });
@@ -184,28 +201,79 @@ async function sortDiffs(s, e) {
   return symbols;
 }
 
+async function manageHTrackSemaphores(s, e, t) {
+  var symbols = s;
+  var exchanges = e;
+  var trackers = t;
+  Object.keys(trackers).map((symbol) => {
+    var tracker = trackers[symbol];
+    var _symbols = symbols.filter(_symbol => _symbol.symbol===symbol);
+    var _symbol = _symbols[0];
+    var id1 = _symbol.diffs[0].id1;
+    var id2 = _symbol.diffs[0].id2;
+    if (trackers[symbol]==='start') {
+      trackers[symbol] = 'run';
+      new Promise(async (resolve, reject) => {
+        while (trackers[symbol] === 'run') {
+          var promises = [];
+          var err, data1, data2;
+          promises.push((async function() {
+            [err, data1] = await to(exchanges[id1].fetchTicker(symbol));
+          })());
+          promises.push((async function() {
+            [err, data2] = await to(exchanges[id2].fetchTicker(symbol));
+          })());
+          await Promise.all(promises.map(p => p.catch(() => undefined)));
+          var tempobj = {
+            e1: id1,
+            e2: id2,
+            c1: symbol.split('/')[0],
+            c2: symbol.split('/')[1],
+            symbol: symbol
+          };
+          if (data1) {
+            tempobj.bid1 = data1.bid;
+            tempobj.ask1 = data1.ask;
+            if (data2) {
+              tempobj.timestamp = Math.min(data1.timestamp, data2.timestamp);
+            }
+          }
+          if (data2) {
+            tempobj.bid2 = data2.bid;
+            tempobj.ask2 = data2.ask;
+          }
+          io.emit('hTrackData', tempobj);
+        }
+        return resolve();
+      });
+    }
+  });
+}
+
 (async function () {
   var symbols, exchanges, err;
   var a, b;
   a = performance.now();
-  exchanges = await connectExchanges(['hitbtc', 'cryptopia']);
+  exchanges = await connectExchanges(['hitbtc', 'cryptopia', 'bleutrade', 'liqui']);
+  //exchanges = await connectExchanges(ccxt.exchanges);
   b = performance.now();
-  console.log(`Took ${b-a}ms to connect exchanges`);
+  log(`Took ${b-a}ms to connect exchanges`);
   a = performance.now();
   symbols = await getSymbols(exchanges);
   b = performance.now();
-  console.log(`Took ${b-a}ms to get symbols`);
+  log(`Took ${b-a}ms to get symbols`);
   a = performance.now();
   symbols = await cullOfflineMarkets(symbols, exchanges);
   b = performance.now();
-  console.log(`Took ${b-a}ms to cull offline markets`);
+  log(`Took ${b-a}ms to cull offline markets`);
   while (true) {
     a = performance.now();
     symbols = await getPrices(symbols, exchanges);
     symbols = await getDiffs(symbols, exchanges);
     symbols = await sortDiffs(symbols, exchanges);
     io.emit('symbols', symbols);
+    await manageHTrackSemaphores(symbols, exchanges, trackerSemaphores);
     b = performance.now();
-    console.log(`Took ${b-a}ms to complete one cycle of pricing`);
+    log(`Took ${b-a}ms to complete one cycle of pricing`);
   }
 })();
