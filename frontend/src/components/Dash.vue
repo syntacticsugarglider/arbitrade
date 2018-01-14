@@ -1,9 +1,9 @@
 <template>
   <div class="container">
     <div v-for="opportunity, index in symbols" v-if="opportunity.diffs.length>0" class="opportunity">
-      <span class="yellow">#{{index+1}}&nbsp;</span>Buy&nbsp;<span class="yellow">{{opportunity.c1}}</span>&nbsp;with&nbsp;<span class="yellow">{{opportunity.c2}}</span>&nbsp;on<span class="yellow">&nbsp;{{opportunity.diffs[0].ex1}}&nbsp;</span>for&nbsp;<span class="yellow">{{opportunity.exchanges[opportunity.diffs[0].ex1].ask}}</span>,
-      and sell on<span class="yellow">&nbsp;{{opportunity.diffs[0].ex2}}</span>&nbsp;for&nbsp;<span class="yellow">{{opportunity.exchanges[opportunity.diffs[0].ex2].bid}}</span>&nbsp; to a profit of&nbsp;<span class="yellow">{{(opportunity.diffs[0].rdiff*100).toFixed(1)}}%</span>&nbsp;
-      ({{Math.ceil((Math.floor(currentTime)-Math.max(opportunity.exchanges[opportunity.diffs[0].ex2].timestamp,opportunity.exchanges[opportunity.diffs[0].ex1].timestamp)))}}ms old)
+      <span class="yellow">#{{index+1}}&nbsp;</span>Buy&nbsp;<span class="yellow">{{opportunity.c1}}</span>&nbsp;with&nbsp;<span class="yellow">{{opportunity.c2}}</span>&nbsp;on<span class="yellow">&nbsp;{{opportunity.diffs[0].ex1}}&nbsp;</span>for&nbsp;<span class="yellow">{{opportunity.exchanges[opportunity.diffs[0].id1].ask}}</span>,
+      and sell on<span class="yellow">&nbsp;{{opportunity.diffs[0].ex2}}</span>&nbsp;for&nbsp;<span class="yellow">{{opportunity.exchanges[opportunity.diffs[0].id2].bid}}</span>&nbsp; to a profit of&nbsp;<span class="yellow">{{(opportunity.diffs[0].rdiff*100).toFixed(1)}}%</span>&nbsp;
+      ({{Math.ceil((currentTime-opportunity.diffs[0].timestamp)/1000)}}s old)
     </div>
   </div>
 </template>
