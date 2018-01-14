@@ -163,7 +163,7 @@ async function getDiffs(s, e) {
           if (e1.ask < e2.bid) {
             symbol.diffs.push({
               diff: e2.bid-e1.ask,
-              rdiff: (e2.bid-e1.ask)/e2.bid,
+              rdiff: (e2.bid-e1.ask)/e1.ask,
               timestamp: Math.min(e1.timestamp, e2.timestamp),
               ex1: ex1,
               ex2: ex2,
@@ -218,29 +218,27 @@ async function manageHTrackSemaphores(s, e, t) {
           var promises = [];
           var err, data1, data2;
           promises.push((async function() {
-            [err, data1] = await to(exchanges[id1].fetchTicker(symbol));
+            [err, data1] = await to(exchanges[id1].fetchOrderBook(symbol));
           })());
           promises.push((async function() {
-            [err, data2] = await to(exchanges[id2].fetchTicker(symbol));
+            [err, data2] = await to(exchanges[id2].fetchOrderBook(symbol));
           })());
           await Promise.all(promises.map(p => p.catch(() => undefined)));
-          var tempobj = {
-            e1: id1,
-            e2: id2,
+        var tempobj = {
             c1: symbol.split('/')[0],
             c2: symbol.split('/')[1],
             symbol: symbol
           };
           if (data1) {
-            tempobj.bid1 = data1.bid;
-            tempobj.ask1 = data1.ask;
+            tempobj.e1 = id1;
+            tempobj.ob1 = data1;
             if (data2) {
               tempobj.timestamp = Math.min(data1.timestamp, data2.timestamp);
             }
           }
           if (data2) {
-            tempobj.bid2 = data2.bid;
-            tempobj.ask2 = data2.ask;
+            tempobj.e2 = id2;
+            tempobj.ob2 = data2;
           }
           io.emit('hTrackData', tempobj);
         }
@@ -272,7 +270,7 @@ async function manageHTrackSemaphores(s, e, t) {
     symbols = await getDiffs(symbols, exchanges);
     symbols = await sortDiffs(symbols, exchanges);
     io.emit('symbols', symbols);
-    await manageHTrackSemaphores(symbols, exchanges, trackerSemaphores);
+    await to(manageHTrackSemaphores(symbols, exchanges, trackerSemaphores));
     b = performance.now();
     log(`Took ${b-a}ms to complete one cycle of pricing`);
   }
