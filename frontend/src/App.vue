@@ -36,6 +36,7 @@ export default {
     this.socket.on('hTrackData', (data) => {
       this.rtTrackers[data.symbol] = Object.assign(this.rtTrackers[data.symbol] ? this.rtTrackers[data.symbol] : {}, data);
       this.rtTrackers = JSON.parse(JSON.stringify(this.rtTrackers));
+      this.$emit('update','track');
     })
   },
   methods: {
