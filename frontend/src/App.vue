@@ -83,6 +83,7 @@ body {
   position: fixed;
   color: #FDD835;
   font-weight: 800;
+  user-select: none;
   font-size: 2rem;
 }
 .item {

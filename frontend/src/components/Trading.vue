@@ -26,11 +26,11 @@
       <div class="book">
         <div class="bookleft">
           <div class="entry ex">{{trackers[symbol].e1}}</div>
-          <div :class="actives[symbol] && actives[symbol].indexOf(index)!=-1 ? 'active entry' : 'entry'" v-for="(order, index) in trackers[symbol].ob1.asks"><div>{{order[0]}}</div><div class="small">{{order[1]}}{{trackers[symbol].c1}}</div></div>
+          <div :class="actives[symbol] && actives[symbol].indexOf(index)!=-1 ? 'active entry' : 'entry'" v-for="(order, index) in trackers[symbol].ob1.asks"><div>{{order[0].toFixed(8)}}</div><div class="small">{{order[1].toFixed(8)}}{{trackers[symbol].c1}}</div></div>
         </div>
         <div class="bookright">
           <div class="entry ex">{{trackers[symbol].e2}}</div>
-          <div :class="sactives[symbol] && sactives[symbol].indexOf(index)!=-1 ? 'active entry' : 'entry'" v-for="(order, index) in trackers[symbol].ob2.bids"><div>{{order[0]}}</div><div class="small">{{order[1]}}{{trackers[symbol].c1}}</div></div>
+          <div :class="sactives[symbol] && sactives[symbol].indexOf(index)!=-1 ? 'active entry' : 'entry'" v-for="(order, index) in trackers[symbol].ob2.bids"><div>{{order[0].toFixed(8)}}</div><div class="small">{{order[1].toFixed(8)}}{{trackers[symbol].c1}}</div></div>
         </div>
       </div>
       <div class="rev">Estimated revenue: {{rev[symbol] ? rev[symbol].toFixed(5) : 0}}{{trackers[symbol].c2}}</div>
@@ -177,6 +177,7 @@ export default {
 }
 .path {
   font-size: 0.7rem;
+  text-align: center;
 }
 strong {
   font-size: 0.8rem;
@@ -260,6 +261,7 @@ strong {
 }
 .entry {
   font-family: Futura;
+  font-size: 0.8rem;
 }
 .entry.ex {
   border-bottom: 2px solid black;
@@ -276,8 +278,10 @@ strong {
 .rev {
   font-family: Futura;
   margin-top: 15px;
+  text-align: center;
 }
 .p2 {
   font-family: Futura;
+  text-align: center;
 }
 </style>
