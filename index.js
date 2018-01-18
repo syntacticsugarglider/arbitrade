@@ -25,7 +25,7 @@ http.listen(3001, 'localhost', function(){
 });
 
 async function log(message) {
-  //console.log(message);
+  console.log(message);
 }
 
 async function connectExchanges(ts) {
@@ -252,8 +252,8 @@ async function manageHTrackSemaphores(s, e, t) {
   var symbols, exchanges, err;
   var a, b;
   a = performance.now();
-  exchanges = await connectExchanges(['hitbtc', 'cryptopia', 'bleutrade', 'liqui']);
   //exchanges = await connectExchanges(ccxt.exchanges);
+  exchanges = await connectExchanges(['liqui', 'cryptopia', 'bleutrade', 'poloniex', 'kraken', 'gdax']);
   b = performance.now();
   log(`Took ${b-a}ms to connect exchanges`);
   a = performance.now();
