@@ -243,17 +243,19 @@ func (c *Cryptopia) GetOrderBooks(t ...[]string) (map[string]*generics.OrderBook
 		_rids = targets[29:]
 		_ids = _ids[0:29]
 	}
-	err := generics.Fetch(fmt.Sprintf("https://www.cryptopia.co.nz/api/GetMarketOrderGroups/%s", strings.Join(_ids, "-")), &_orderBooks)
-	if err != nil {
-		return nil, err
-	}
-	if !_orderBooks.Success {
-		return nil, errors.New("Order books request to Cryptopia returned with declared failure")
-	}
-	timestamp := time.Now().UTC()
-	orderBooks := map[string]*generics.OrderBook{}
+	err := errors.New("")
 	done := make(chan struct{})
+	orderBooks := map[string]*generics.OrderBook{}
 	go func(chan struct{}) {
+		err = generics.Fetch(fmt.Sprintf("https://www.cryptopia.co.nz/api/GetMarketOrderGroups/%s", strings.Join(_ids, "-")), &_orderBooks)
+		if err != nil {
+			return
+		}
+		if !_orderBooks.Success {
+			err = errors.New("Order books request to Cryptopia returned with declared failure")
+			return
+		}
+		timestamp := time.Now().UTC()
 		for _, book := range _orderBooks.Data {
 			_ = OrderBooksData{}
 			c.OrderBooks[strings.Replace(book.Market, "_", "/", -1)].Timestamp = timestamp
@@ -284,9 +286,15 @@ func (c *Cryptopia) GetOrderBooks(t ...[]string) (map[string]*generics.OrderBook
 			return nil, err
 		}
 		<-done
+		if err != nil {
+			return nil, err
+		}
 		return orderBooks, nil
 	}
 	<-done
+	if err != nil {
+		return nil, err
+	}
 	return orderBooks, nil
 }
 
