@@ -4,7 +4,6 @@ import (
 	"arbitrade/exchanges/generics"
 	"errors"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -239,7 +238,11 @@ func (c *Cryptopia) GetOrderBooks(t ...[]string) (map[string]*generics.OrderBook
 		_ids = append(_ids, strconv.FormatInt(int64(_id), 10))
 	}
 	_orderBooks := *new(OrderBooks)
-	log.Println(fmt.Sprintf("https://www.cryptopia.co.nz/api/GetMarketOrderGroups/%s", strings.Join(_ids, "-")))
+	_rids := []string{}
+	if len(_ids) > 29 {
+		_rids = targets[29:]
+		_ids = _ids[0:29]
+	}
 	err := generics.Fetch(fmt.Sprintf("https://www.cryptopia.co.nz/api/GetMarketOrderGroups/%s", strings.Join(_ids, "-")), &_orderBooks)
 	if err != nil {
 		return nil, err
@@ -249,25 +252,41 @@ func (c *Cryptopia) GetOrderBooks(t ...[]string) (map[string]*generics.OrderBook
 	}
 	timestamp := time.Now().UTC()
 	orderBooks := map[string]*generics.OrderBook{}
-	for _, book := range _orderBooks.Data {
-		_ = OrderBooksData{}
-		c.OrderBooks[strings.Replace(book.Market, "_", "/", -1)].Timestamp = timestamp
-		c.OrderBooks[strings.Replace(book.Market, "_", "/", -1)].Buy = []generics.Order{}
-		for _, buy := range book.Buy {
-			c.OrderBooks[strings.Replace(book.Market, "_", "/", -1)].Buy = append(c.OrderBooks[strings.Replace(book.Market, "_", "/", -1)].Buy, generics.Order{
-				Price:  buy.Price,
-				Volume: buy.Volume,
-			})
+	done := make(chan struct{})
+	go func(chan struct{}) {
+		for _, book := range _orderBooks.Data {
+			_ = OrderBooksData{}
+			c.OrderBooks[strings.Replace(book.Market, "_", "/", -1)].Timestamp = timestamp
+			c.OrderBooks[strings.Replace(book.Market, "_", "/", -1)].Buy = []generics.Order{}
+			for _, buy := range book.Buy {
+				c.OrderBooks[strings.Replace(book.Market, "_", "/", -1)].Buy = append(c.OrderBooks[strings.Replace(book.Market, "_", "/", -1)].Buy, generics.Order{
+					Price:  buy.Price,
+					Volume: buy.Volume,
+				})
+			}
+			c.OrderBooks[strings.Replace(book.Market, "_", "/", -1)].Sell = []generics.Order{}
+			for _, sell := range book.Sell {
+				c.OrderBooks[strings.Replace(book.Market, "_", "/", -1)].Sell = append(c.OrderBooks[strings.Replace(book.Market, "_", "/", -1)].Sell, generics.Order{
+					Price:  sell.Price,
+					Volume: sell.Volume,
+				})
+			}
+			orderBooks[strings.Replace(book.Market, "_", "/", -1)] = c.OrderBooks[strings.Replace(book.Market, "_", "/", -1)]
 		}
-		c.OrderBooks[strings.Replace(book.Market, "_", "/", -1)].Sell = []generics.Order{}
-		for _, sell := range book.Sell {
-			c.OrderBooks[strings.Replace(book.Market, "_", "/", -1)].Sell = append(c.OrderBooks[strings.Replace(book.Market, "_", "/", -1)].Sell, generics.Order{
-				Price:  sell.Price,
-				Volume: sell.Volume,
-			})
+		done <- struct{}{}
+	}(done)
+	if len(_rids) > 1 {
+		rOrderBooks, err := c.GetOrderBooks(_rids)
+		for k, v := range rOrderBooks {
+			orderBooks[k] = v
 		}
-		orderBooks[strings.Replace(book.Market, "_", "/", -1)] = c.OrderBooks[strings.Replace(book.Market, "_", "/", -1)]
+		if err != nil {
+			return nil, err
+		}
+		<-done
+		return orderBooks, nil
 	}
+	<-done
 	return orderBooks, nil
 }
 
