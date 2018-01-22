@@ -18,9 +18,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	orderBooks, err := exchange.GetOrderBooks()
+	_, err = exchange.GetOrderBooks()
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println(orderBooks)
 }
