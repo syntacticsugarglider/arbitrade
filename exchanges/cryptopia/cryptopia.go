@@ -28,7 +28,7 @@ type Symbol struct {
 
 //Market represents a single market returned from the Cryptopia API
 type Market struct {
-	TradePairId    int32
+	TradePairID    int32 `json:"TradePairID"`
 	Label          string
 	AskPrice       float64
 	BidPrice       float64
@@ -48,7 +48,7 @@ type Market struct {
 
 //TradePair represents a single trade pair returned from the Cryptopia API
 type TradePair struct {
-	Id               int32
+	ID               int32 `json:"Id"`
 	Label            string
 	Currency         string
 	Symbol           string
@@ -88,7 +88,7 @@ type TradePairs struct {
 
 //Order represents a Cryptopia buy or sell order
 type Order struct {
-	TradePairId int32
+	TradePairID int32 `json:"TradePairId"`
 	Label       string
 	Price       float64
 	Volume      float64
@@ -103,7 +103,7 @@ type OrderBookData struct {
 
 //OrderBooksData represents the order book structure from a multi-book request to the Cryptopia API
 type OrderBooksData struct {
-	TradePairId int32
+	TradePairID int32 `json:"tradePairId"`
 	Market      string
 	Buy         []Order
 	Sell        []Order
@@ -202,6 +202,7 @@ func (c *Cryptopia) GetSymbols() (map[string]*generics.Symbol, error) {
 			MinBaseTrade: symbol.MinBaseTrade,
 			Symbol:       symbol.Symbol,
 			Active:       symbol.Status == "OK" && symbol.ListingStatus == "Active",
+			Name:         symbol.Name,
 		}
 	}
 	c.Symbols = symbols
@@ -231,7 +232,7 @@ func (c *Cryptopia) GetOrderBooks(t ...[]string) (map[string]*generics.OrderBook
 		if !ok {
 			return nil, errors.New("Invalid symbol passed to Cryptopia GetOrderBooks")
 		}
-		ids = append(ids, id.Data.(Market).TradePairId)
+		ids = append(ids, id.Data.(Market).TradePairID)
 	}
 	_ids := []string{}
 	for _, _id := range ids {
@@ -305,7 +306,7 @@ func (c *Cryptopia) GetOrderBook(symbol string) (*generics.OrderBook, error) {
 		return nil, errors.New("Invalid symbol passed to Cryptopia GetOrderBook")
 	}
 	_orderBook := *new(OrderBook)
-	err := generics.Fetch(fmt.Sprintf("https://www.cryptopia.co.nz/api/GetMarketOrders/%d", c.Markets[symbol].Data.(Market).TradePairId), &_orderBook)
+	err := generics.Fetch(fmt.Sprintf("https://www.cryptopia.co.nz/api/GetMarketOrders/%d", c.Markets[symbol].Data.(Market).TradePairID), &_orderBook)
 	if err != nil || !_orderBook.Success {
 		if err != nil {
 			return nil, err
