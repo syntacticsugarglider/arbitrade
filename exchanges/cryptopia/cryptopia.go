@@ -28,7 +28,7 @@ type Symbol struct {
 
 //Market represents a single market returned from the Cryptopia API
 type Market struct {
-	TradePairID    int32 `json:"TradePairID"`
+	TradePairID    int32 `json:"TradePairId"`
 	Label          string
 	AskPrice       float64
 	BidPrice       float64
