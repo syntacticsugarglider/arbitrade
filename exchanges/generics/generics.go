@@ -28,6 +28,7 @@ type Symbol struct {
 	MinBaseTrade float64
 	Data         ResponseData
 	Active       bool
+	Name         string
 }
 
 //Market represents a cryptocurrency market
