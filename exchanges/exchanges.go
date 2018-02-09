@@ -12,6 +12,7 @@ func New(id string) (generics.ExchangeAPI, error) {
 	case "cryptopia":
 		exptr := new(cryptopia.Cryptopia)
 		exptr.Exchange = new(generics.Exchange)
+		exptr.Name = "Cryptopia"
 		exptr.OrderBooks = map[string]*generics.OrderBook{}
 		return exptr, nil
 	}
@@ -26,6 +27,7 @@ func NewMultiple(id []string) ([]generics.ExchangeAPI, error) {
 		case "cryptopia":
 			exptr := new(cryptopia.Cryptopia)
 			exptr.Exchange = new(generics.Exchange)
+			exptr.Name = "Cryptopia"
 			exptr.OrderBooks = map[string]*generics.OrderBook{}
 			exchanges = append(exchanges, exptr)
 		default:

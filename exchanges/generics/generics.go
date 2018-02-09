@@ -49,8 +49,7 @@ type Market struct {
 }
 
 //ResponseData represents a semantic marker for the full API response data of a call
-type ResponseData interface {
-}
+type ResponseData interface{}
 
 //ExchangeAPI represents the operations performable on a cryptocurrency exchange
 type ExchangeAPI interface {
@@ -63,6 +62,7 @@ type ExchangeAPI interface {
 
 //Exchange represents all data stored that pertains to a cryptocurrency exchange
 type Exchange struct {
+	Name       string
 	Markets    map[string]*Market
 	Symbols    map[string]*Symbol
 	OrderBooks map[string]*OrderBook

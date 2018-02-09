@@ -1,7 +1,9 @@
 package main
 
 import (
+	"arbitrade/db"
 	"arbitrade/exchanges"
+	"arbitrade/exchanges/generics"
 	"log"
 )
 
@@ -18,8 +20,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, err = exchange.GetOrderBooks()
+	manager, err := db.NewManager([]generics.ExchangeAPI{exchange})
 	if err != nil {
 		log.Fatal(err)
 	}
+	manager.Start()
+	defer manager.Close()
 }
