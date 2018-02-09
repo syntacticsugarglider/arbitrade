@@ -40,6 +40,7 @@ type MarketNode struct {
 	MaxTrade     float64      `json:"max_trade,omitempty"`
 	MaxBaseTrade float64      `json:"max_base_trade,omitempty"`
 	Targets      []MarketNode `json:"targets,omitempty"`
+	BaseTargets  []MarketNode `json:"base_targets,omitempty"`
 	TradeFee     float64      `json:"trade_fee,omitempty"`
 	BuyOrders    []OrderNode  `json:"buy_orders,omitempty"`
 	MinPrice     float64      `json:"min_price,omitempty"`
@@ -169,6 +170,7 @@ func NewManager(exs []generics.ExchangeAPI) (ManagerAPI, error) {
 						MaxTrade:     market.MaxTrade,
 						MaxBaseTrade: market.MaxBaseTrade,
 						Targets:      []MarketNode{},
+						BaseTargets:  []MarketNode{},
 						TradeFee:     market.TradeFee,
 						BuyOrders:    []OrderNode{},
 						MinPrice:     market.MinPrice,
